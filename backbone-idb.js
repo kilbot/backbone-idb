@@ -80,7 +80,7 @@
      *
      * @type String
      */
-    version: '0.2.8',
+    version: '0.2.9',
 
     /**
      * Add a new model to the store
@@ -292,9 +292,19 @@
    * compliant with Backbone's api.
    */
   Backbone.IndexedDB.sync = Backbone.idbSync = function(method, model, options) {
+    var deferred = new $.Deferred();
     var db = model.indexedDB || model.collection.indexedDB;
     // console.log('Backbone.IndexedDB.sync', method, model, options);
-
+    var success = options.success || noop;
+    var error = options.success || noop;
+    options.success = function (result) {
+      deferred.resolve(result);
+      success.apply(this, arguments);
+    };
+    options.error = function (result) {
+      deferred.reject(result);
+      error.apply(this, arguments);
+    };
     switch (method) {
 
       // Retrieve an individual model or entire collection from indexedDB
@@ -324,6 +334,7 @@
         }
         break;
     }
+    return deferred.promise();
 
   };
 
