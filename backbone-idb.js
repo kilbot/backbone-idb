@@ -80,7 +80,7 @@
      *
      * @type String
      */
-    version: '0.2.9',
+    version: '0.2.10',
 
     /**
      * Add a new model to the store
@@ -298,12 +298,12 @@
     var success = options.success || noop;
     var error = options.success || noop;
     options.success = function (result) {
-      deferred.resolve(result);
       success.apply(this, arguments);
+      deferred.resolve(result);
     };
     options.error = function (result) {
-      deferred.reject(result);
       error.apply(this, arguments);
+      deferred.reject(result);
     };
     switch (method) {
 
