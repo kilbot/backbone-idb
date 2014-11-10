@@ -12,16 +12,16 @@
   'use strict';
   if (typeof exports === 'object' && typeof require === 'function') {
     // CommonJS Module - Register as a CommonJS Module 
-    module.exports = factory(require('underscore'), require('backbone'), require('idb-wrapper'), 'CommonJS');
+    module.exports = factory(require('underscore'), require('backbone'), require('idb-wrapper'), require('jquery'), 'CommonJS');
   } else if (typeof define === 'function' && define.amd) {
     // AMD - Register as an anonymous module
-    define(['underscore', 'backbone'], function(_, Backbone) {
-      return factory(_ || global._, Backbone || global.Backbone, IDBStore || global.IDBStore, 'AMD');
+    define(['underscore', 'backbone', 'jquery'], function(_, Backbone, $) {
+      return factory(_ || global._, Backbone || global.Backbone, IDBStore || global.IDBStore, $ || global.$, 'AMD');
     });
   } else {
     factory(_, Backbone, IDBStore, global);
   }
-}(this, function(_, Backbone, IDBStore, global) {
+}(this, function(_, Backbone, IDBStore, $, global) {
   'use strict';
 
   // // Generate four random hex digits.
