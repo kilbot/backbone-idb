@@ -1,6 +1,5 @@
 backbone-idb
 ============
-[![Build Status](https://travis-ci.org/kilbot/backbone-idb.svg)](https://travis-ci.org/kilbot/backbone-idb)
 
 Backbone [IndexedDB](https://developer.mozilla.org/en-US/docs/IndexedDB) adapter with cross browser support via [IDBWrapper](https://github.com/jensarps/IDBWrapper)
 
