@@ -18,5 +18,13 @@ bb.IDBCollection = bb.Collection.extend({
   initialize: function(models, options){
     this.db = new IndexedDB(options, this);
     this.db.open();
+  },
+  merge: function(models){
+    var self = this;
+    return this.db.merge(models, {mergeOnKeyPath: 'id'})
+      .then(function(){
+        var models = Array.prototype.slice.apply(arguments);
+        return self.add(models, {merge: true});
+      });
   }
 });

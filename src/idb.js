@@ -40,17 +40,20 @@ var methods = {
    */
   create: function(model, options) {
     var deferred = new $.Deferred(),
-      data = model.attributes,
-      keyPath = this.store.keyPath;
+        options = options || {},
+        success = options.success || noop,
+        error = options.error || defaultErrorHandler,
+        data = model.attributes || model,
+        keyPath = this.store.keyPath;
 
     var onSuccess = function(insertedId){
       data[keyPath] = insertedId;
-      options.success(data);
+      success(data);
       deferred.resolve(data);
     };
 
     var onError = function(result){
-      options.error(result);
+      error(result);
       deferred.reject(result);
     };
 
@@ -63,7 +66,31 @@ var methods = {
    * Update a model in the store
    */
   update: function(model, options) {
-    return this.put(model.attributes, options.success, options.error);
+    var deferred = new $.Deferred(),
+        options = options || {},
+        success = options.success || noop,
+        error = options.error || defaultErrorHandler,
+        data = model.attributes || model,
+        self = this;
+
+    var onSuccess = function(key){
+      self.get(key, function(data){
+        success(data);
+        deferred.resolve(data);
+      }, function(result){
+        error(result);
+        deferred.reject(result);
+      });
+    };
+
+    var onError = function(result){
+      error(result);
+      deferred.reject(result);
+    };
+
+    this.store.put(data, onSuccess, onError);
+
+    return deferred.promise();
   },
 
   /**
@@ -101,7 +128,13 @@ var methods = {
       deferred.reject(result);
     };
 
-    this.store.put(key, value, onSuccess, onError);
+    if (this.store.keyPath !== null) {
+      // in-line keys: one arg only (key == value)
+      this.store.put(key, onSuccess, onError);
+    } else {
+      // out-of-line keys: two args
+      this.store.put(key, value, onSuccess, onError);
+    }
 
     return deferred.promise();
   },
@@ -132,7 +165,14 @@ var methods = {
   /**
    *
    */
-  remove: function (key, success, error) {
+  remove: function(key, success, error){
+    if( _.isObject(key) && key.hasOwnProperty(this.store.keyPath) ) {
+      key = key[this.store.keyPath];
+    }
+    return this._remove(key, success, error);
+  },
+
+  _remove: function (key, success, error) {
     var deferred = new $.Deferred();
     success = success || noop;
     error = error || defaultErrorHandler;
@@ -155,18 +195,16 @@ var methods = {
   /**
    * Retrieve a collection from the store
    */
-  getAll: function(success, error) {
+  getAll: function(options) {
     var deferred = new $.Deferred();
-    success = success || noop;
-    error = error || defaultErrorHandler;
 
     var onSuccess = function (result) {
-      success.apply(this, arguments);
+      options.success.apply(this, arguments);
       deferred.resolve(result);
     };
 
     var onError = function (result) {
-      error.apply(this, arguments);
+      options.error.apply(this, arguments);
       deferred.reject(result);
     };
 
@@ -259,7 +297,14 @@ var methods = {
    * Perform a batch put operation to save models to indexedDB. This is a
    * proxy to the idbstore `putBatch` method
    */
-  putBatch: function(dataArray, success, error) {
+  putBatch: function(keyArray, success, error) {
+    if( !_.isArray(keyArray) ){
+      return this.put(keyArray, success, error);
+    }
+    return this._putBatch(keyArray, success, error);
+  },
+
+  _putBatch: function(dataArray, success, error) {
     var deferred = new $.Deferred();
     success = success || noop;
     error = error || defaultErrorHandler;
@@ -284,6 +329,13 @@ var methods = {
    * proxy to the idbstore `removeBatch` method
    */
   removeBatch: function(keyArray, success, error) {
+    if( !_.isArray(keyArray) ){
+      return this.remove(keyArray, success, error);
+    }
+    return this._removeBatch(keyArray, success, error);
+  },
+
+  _removeBatch: function(keyArray, success, error){
     var deferred = new $.Deferred();
     success = success || noop;
     error = error || defaultErrorHandler;
@@ -345,6 +397,37 @@ var methods = {
     });
 
     return deferred.promise();
+  },
+
+  merge: function(models, options){
+    if(!options.mergeOnKeyPath){
+      return this.putBatch(models, options);
+    }
+    if( _.isArray(models) ){
+      var merge = _.map(models, function(model){
+        return this._merge(model, options.mergeOnKeyPath);
+      }, this);
+      return $.when.apply(this, merge);
+    }
+    return this._merge(models, options.mergeOnKeyPath);
+  },
+
+  _merge: function(model, mergeKeyPath){
+    var keyPath = this.store.keyPath,
+        self = this,
+        opts = {};
+
+    opts[mergeKeyPath] = model[mergeKeyPath];
+
+    return this.getByAttribute(opts)
+      .then(function(array){
+        var local = _.first(array);
+        if(local){
+          model[keyPath] = local[keyPath];
+          return self.update(model);
+        }
+        return self.create(model);
+      });
   }
 };
 
