@@ -1,118 +1,54 @@
-'use strict';
-
 module.exports = function(grunt) {
-  // load all grunt tasks
-  require('load-grunt-tasks')(grunt);
 
   grunt.initConfig({
-    pkg: grunt.file.readJSON('package.json'),
 
-    watch:{
-      mocha: {
-        // files: ['<%= yeoman.app %>/scripts/main.js'],
-        files: ['test/{,*/}*.js', 'backbone-idb.js'],
-        tasks: ['mocha']
-      },
-      livereload: {
-        options: {
-          livereload: '<%= connect.options.livereload %>'
-        },
-        files: [
-          '{,.tmp/}test/{,*/}*.js',
-          'backbone-idb.js'
-        ]
-      }
-    },
-    connect: {
-      options: {
-        port: 9500,
-        livereload: 35730,
-        hostname: 'localhost'
-      },
-      livereload: {
-        options: {
-          open: true,
-          base: [
-            'test',
-            'node_modules'
-          ]
-        }
+    watch: {
+      js: {
+        files: ['src/*.js'],
+        tasks: ['jshint']
       },
       test: {
-        options: {
-          port: 9500,
-          livereload: 35730,
-          hostname: 'localhost',
-          open: true,
-          base: [
-            'test',
-            'node_modules',
-            './'
-          ]
-        }
+        files: ['test/spec.js']
       }
     },
-    clean: {
-      dist: {
-        files: [{
-          dot: true,
-          src: [
-            '.tmp',
-            'dist/*'
-          ]
-        }]
-      }
-    },
+
     jshint: {
       options: {
-        jshintrc: '.jshintrc'
+        jshintrc: true,
+        reporter: require('jshint-stylish'),
+        verbose: true
       },
-      all: [
-        'Gruntfile.js',
-        // 'backbone-idb.js',
-        'test/{,*/}*.js'
-      ]
+      files: ['src/*.js']
     },
-    mocha: {
-      all: {
-        // src: 'test/index.html',
-        options: {
-          run: true,
-          reporter: 'Spec',
-          log: true,
-          bail: false,
-          mocha: {
-            ignoreLeaks: true
-          },
-          urls: ['http://<%= connect.test.options.hostname %>:<%= connect.test.options.port %>/test/index.html']
+
+    webpack: {
+      options: {
+        entry: {
+          'backbone-idb': './index.js'
+        },
+        resolve: {
+          modulesDirectories: ['node_modules']
+        },
+        externals: {
+          jquery: 'jQuery',
+          underscore: '_',
+          backbone: 'Backbone',
+          'idb-wrapper': 'IDBStore'
+        },
+        cache: true,
+        watch: true
+      },
+      build: {
+        output: {
+          path: './',
+          filename: '[name].js'
         }
       }
-    },
-    concurrent: {
-      test: [
-        'mocha'
-      ],
-      dist: [
-        'clean:dist'
-      ]
     }
+
   });
 
-  grunt.registerTask('test', [
-    'jshint',
-    'connect:test',
-    'mocha'
-    // 'watch'
-  ]);
-
-  grunt.registerTask('build', [
-    'jshint',
-    'concurrent:dist'
-  ]);
-
-  grunt.registerTask('default', [
-    'jshint',
-    'test',
-    'build'
-  ]);
-};
+  require('load-grunt-tasks')(grunt);
+  grunt.registerTask('default', ['jshint', 'webpack']);
+  grunt.registerTask('dev', ['default', 'watch']);
+}
