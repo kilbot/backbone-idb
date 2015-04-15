@@ -41,26 +41,18 @@ var methods = {
    */
   create: function(model, options) {
     options = options || {};
-    var deferred = new $.Deferred(),
-        success = options.success || noop,
-        error = options.error || defaultErrorHandler,
+    var onSuccess = options.success || noop,
+        onError = options.error || defaultErrorHandler,
         data = this._returnAttributes(model),
         keyPath = this.store.keyPath;
 
-    var onSuccess = function(insertedId){
-      data[keyPath] = insertedId;
-      success(data);
-      deferred.resolve(data);
-    };
-
-    var onError = function(result){
-      error(result);
-      deferred.reject(result);
-    };
-
-    this.store.put(data, onSuccess, onError);
-
-    return deferred.promise();
+    return this.store.put(data)
+      .then(function(insertedId){
+        data[keyPath] = insertedId;
+        onSuccess(data);
+        return data;
+      })
+      .fail(onError);
   },
 
   /**
@@ -68,37 +60,30 @@ var methods = {
    */
   update: function(model, options) {
     options = options || {};
-    var deferred = new $.Deferred(),
-        success = options.success || noop,
-        error = options.error || defaultErrorHandler,
+    var onSuccess = options.success || noop,
+        onError = options.error || defaultErrorHandler,
         data = this._returnAttributes(model),
         self = this;
 
-    var onSuccess = function(key){
-      self.get(key, function(data){
-        success(data);
-        deferred.resolve(data);
-      }, function(result){
-        error(result);
-        deferred.reject(result);
-      });
-    };
-
-    var onError = function(result){
-      error(result);
-      deferred.reject(result);
-    };
-
-    this.store.put(data, onSuccess, onError);
-
-    return deferred.promise();
+    return this.store.put(data)
+      .then(function(insertedId){
+        return self.get(insertedId)
+          .done(onSuccess)
+          .fail(onError);
+      })
+      .fail(onError);
   },
 
   /**
    * Retrieve a model from the store
    */
   read: function(model, options) {
-    return this.get(model.id, options.success, options.error);
+    options = options || {};
+    var onSuccess = options.success || noop,
+        onError = options.error || defaultErrorHandler;
+    return this.get(model.id)
+      .done(onSuccess)
+      .fail(onError);
   },
 
   /**
@@ -108,33 +93,27 @@ var methods = {
     if (model.isNew()) {
       return false;
     }
-    return this.remove(model.id, options.success, options.error);
+    options = options || {};
+    var onSuccess = options.success || noop,
+        onError = options.error || defaultErrorHandler;
+
+    return this.remove(model.id)
+      .done(onSuccess)
+      .fail(onError);
   },
 
   /**
    *
    */
-  put: function (key, value, success, error) {
+  put: function (key, value) {
     var deferred = new $.Deferred();
-    success = success || noop;
-    error = error || defaultErrorHandler;
-
-    var onSuccess = function (result) {
-      success.apply(this, arguments);
-      deferred.resolve(result);
-    };
-
-    var onError = function (result) {
-      error.apply(this, arguments);
-      deferred.reject(result);
-    };
 
     if (this.store.keyPath !== null) {
       // in-line keys: one arg only (key == value)
-      this.store.put(key, onSuccess, onError);
+      this.store.put(key, deferred.resolve, deferred.reject);
     } else {
       // out-of-line keys: two args
-      this.store.put(key, value, onSuccess, onError);
+      this.store.put(key, value, deferred.resolve, deferred.reject);
     }
 
     return deferred.promise();
@@ -143,53 +122,25 @@ var methods = {
   /**
    *
    */
-  get: function (key, success, error) {
+  get: function (key) {
     var deferred = new $.Deferred();
-    success = success || noop;
-    error = error || defaultErrorHandler;
-
-    var onSuccess = function (result) {
-      success.apply(this, arguments);
-      deferred.resolve(result);
-    };
-
-    var onError = function (result) {
-      error.apply(this, arguments);
-      deferred.reject(result);
-    };
-
-    this.store.get(key, onSuccess, onError);
-
+    this.store.get(key, deferred.resolve, deferred.reject);
     return deferred.promise();
   },
 
   /**
    *
    */
-  remove: function(key, success, error){
+  remove: function(key){
     if( _.isObject(key) && key.hasOwnProperty(this.store.keyPath) ) {
       key = key[this.store.keyPath];
     }
-    return this._remove(key, success, error);
+    return this._remove(key);
   },
 
-  _remove: function (key, success, error) {
+  _remove: function (key) {
     var deferred = new $.Deferred();
-    success = success || noop;
-    error = error || defaultErrorHandler;
-
-    var onSuccess = function (result) {
-      success.apply(this, arguments);
-      deferred.resolve(result);
-    };
-
-    var onError = function (result) {
-      error.apply(this, arguments);
-      deferred.reject(result);
-    };
-
-    this.store.remove(key, onSuccess, onError);
-
+    this.store.remove(key, deferred.resolve, deferred.reject);
     return deferred.promise();
   },
 
@@ -221,18 +172,10 @@ var methods = {
   iterate: function(options) {
     options = options || {};
     var deferred = new $.Deferred();
-    options.onEnd = function (result) {
-      deferred.resolve(result);
-    };
-    options.onError = function (err) {
-      deferred.reject(err);
-    };
-    var onItem = function (item) {
-      deferred.notify(item);
-    };
-
+    options.onEnd = deferred.resolve;
+    options.onError = deferred.reject;
+    var onItem = deferred.notify;
     this.store.iterate(onItem, options);
-
     return deferred.promise();
   },
 
@@ -250,47 +193,17 @@ var methods = {
    * Perform a batch operation to save all models in the current collection to
    * indexedDB.
    */
-  saveAll: function(success, error) {
-    var deferred = new $.Deferred();
-    success = success || noop;
-    error = error || defaultErrorHandler;
-
-    var onSuccess = function (result) {
-      success.apply(this, arguments);
-      deferred.resolve(result);
-    };
-
-    var onError = function (result) {
-      error.apply(this, arguments);
-      deferred.reject(result);
-    };
-
-    this.store.putBatch(this.parent.toJSON(), onSuccess, onError);
-
-    return deferred.promise();
+  saveAll: function() {
+    return this.putBatch(this.parent.toJSON());
   },
 
   /**
    * Perform a batch operation to save and/or remove models in the current
    * collection to indexedDB. This is a proxy to the idbstore `batch` method
    */
-  batch: function(dataArray, success, error) {
+  batch: function(dataArray) {
     var deferred = new $.Deferred();
-    success = success || noop;
-    error = error || defaultErrorHandler;
-
-    var onSuccess = function (result) {
-      success.apply(this, arguments);
-      deferred.resolve(result);
-    };
-
-    var onError = function (result) {
-      error.apply(this, arguments);
-      deferred.reject(result);
-    };
-
-    this.store.batch(dataArray, onSuccess, onError);
-
+    this.store.batch(dataArray, deferred.resolve, deferred.reject);
     return deferred.promise();
   },
 
@@ -298,30 +211,16 @@ var methods = {
    * Perform a batch put operation to save models to indexedDB. This is a
    * proxy to the idbstore `putBatch` method
    */
-  putBatch: function(keyArray, success, error) {
-    if( !_.isArray(keyArray) ){
-      return this.put(keyArray, success, error);
+  putBatch: function(dataArray) {
+    if( !_.isArray(dataArray) ){
+      return this.put(dataArray);
     }
-    return this._putBatch(keyArray, success, error);
+    return this._putBatch(dataArray);
   },
 
-  _putBatch: function(dataArray, success, error) {
+  _putBatch: function(dataArray) {
     var deferred = new $.Deferred();
-    success = success || noop;
-    error = error || defaultErrorHandler;
-
-    var onSuccess = function (result) {
-      success.apply(this, arguments);
-      deferred.resolve(result);
-    };
-
-    var onError = function (result) {
-      error.apply(this, arguments);
-      deferred.reject(result);
-    };
-
-    this.store.putBatch(dataArray, onSuccess, onError);
-
+    this.store.putBatch(dataArray, deferred.resolve, deferred.reject);
     return deferred.promise();
   },
 
@@ -329,53 +228,25 @@ var methods = {
    * Perform a batch operation to remove models from indexedDB. This is a
    * proxy to the idbstore `removeBatch` method
    */
-  removeBatch: function(keyArray, success, error) {
+  removeBatch: function(keyArray) {
     if( !_.isArray(keyArray) ){
-      return this.remove(keyArray, success, error);
+      return this.remove(keyArray);
     }
-    return this._removeBatch(keyArray, success, error);
+    return this._removeBatch(keyArray);
   },
 
-  _removeBatch: function(keyArray, success, error){
+  _removeBatch: function(keyArray){
     var deferred = new $.Deferred();
-    success = success || noop;
-    error = error || defaultErrorHandler;
-
-    var onSuccess = function (result) {
-      success.apply(this, arguments);
-      deferred.resolve(result);
-    };
-
-    var onError = function (result) {
-      error.apply(this, arguments);
-      deferred.reject(result);
-    };
-
-    this.store.removeBatch(keyArray, onSuccess, onError);
-
+    this.store.removeBatch(keyArray, deferred.resolve, deferred.reject);
     return deferred.promise();
   },
 
   /**
    * Clears all content from the current indexedDB for this collection/model
    */
-  clear: function(success, error) {
+  clear: function() {
     var deferred = new $.Deferred();
-    success = success || noop;
-    error = error || defaultErrorHandler;
-
-    var onSuccess = function (result) {
-      success.apply(this, arguments);
-      deferred.resolve(result);
-    };
-
-    var onError = function (result) {
-      error.apply(this, arguments);
-      deferred.reject(result);
-    };
-
-    this.store.clear(onSuccess, onError);
-
+    this.store.clear(deferred.resolve, deferred.reject);
     return deferred.promise();
   },
 

@@ -92,9 +92,6 @@ describe('IndexedDB Collection', function () {
     });
 
     it('should batch save the collection', function (done) {
-      var onSuccess = function () {
-        done();
-      };
       this.collection.add([
         {
           firstname: 'John',
@@ -108,17 +105,20 @@ describe('IndexedDB Collection', function () {
           email: 'joebloggs@example.com'
         }
       ]);
-      this.collection.db.saveAll(onSuccess);
+      this.collection.db.saveAll()
+        .then(function(){
+          done();
+        });
     });
 
     it('should fetch the collection', function (done) {
       this.collection.reset();
       this.collection.length.should.eql(0);
-      var onSuccess = function(collection){
-        collection.length.should.eql(3);
-        done();
-      };
-      this.collection.fetch({ success: onSuccess });
+      this.collection.fetch()
+        .then(function(col){
+          col.length.should.eql(3);
+          done();
+        });
     });
 
     after(function(done) {
