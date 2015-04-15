@@ -135,7 +135,9 @@ describe('IndexedDB Collection', function () {
         remoteIdAttribute: 'id'
       });
       var Collection = Backbone.IDBCollection.extend({
-        model: Model
+        model: Model,
+        keyPath: 'local_id',
+        mergeKeyPath: 'id'
       });
       this.collection = new Collection([], {
         keyPath: 'local_id',
@@ -169,14 +171,15 @@ describe('IndexedDB Collection', function () {
     it('should merge a model on an arbitrary attribute', function (done) {
       var self = this;
 
-      this.collection.merge({
-        id: 4,
-        firstname: 'John',
-        lastname: 'Doe',
-        age: 54,
-        email: 'johndoe@example.com'
-      },
-        {mergeOnKeyPath: 'id'})
+      this.collection.merge(
+        {
+          id: 4,
+          firstname: 'John',
+          lastname: 'Doe',
+          age: 54,
+          email: 'johndoe@example.com'
+        }
+      )
         .then(function(model){
           model.length.should.eql(1);
           model[0].get('age').should.eql(54);
@@ -190,7 +193,8 @@ describe('IndexedDB Collection', function () {
     it('should merge an array of models on an arbitrary attribute', function (done) {
       var self = this;
 
-      this.collection.merge([{
+      this.collection.merge(
+        [{
           id: 4,
           firstname: 'John',
           lastname: 'Doe',
@@ -202,8 +206,8 @@ describe('IndexedDB Collection', function () {
           lastname: 'Smith',
           age: 35,
           email: 'janesmith@example.com'
-        }],
-        {mergeOnKeyPath: 'id'})
+        }]
+      )
         .then(function(model){
           model.length.should.eql(2);
           self.collection.length.should.eql(2);

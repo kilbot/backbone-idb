@@ -4,6 +4,7 @@
 var IDBStore = require('idb-wrapper');
 var $ = require('jquery');
 var _ = require('underscore');
+var bb = require('backbone');
 var noop = function (){};
 var defaultErrorHandler = function (error) {
   throw error;
@@ -39,11 +40,11 @@ var methods = {
    * Add a new model to the store
    */
   create: function(model, options) {
+    options = options || {};
     var deferred = new $.Deferred(),
-        options = options || {},
         success = options.success || noop,
         error = options.error || defaultErrorHandler,
-        data = model.attributes || model,
+        data = this._returnAttributes(model),
         keyPath = this.store.keyPath;
 
     var onSuccess = function(insertedId){
@@ -66,11 +67,11 @@ var methods = {
    * Update a model in the store
    */
   update: function(model, options) {
+    options = options || {};
     var deferred = new $.Deferred(),
-        options = options || {},
         success = options.success || noop,
         error = options.error || defaultErrorHandler,
-        data = model.attributes || model,
+        data = this._returnAttributes(model),
         self = this;
 
     var onSuccess = function(key){
@@ -399,21 +400,18 @@ var methods = {
     return deferred.promise();
   },
 
-  merge: function(models, options){
-    if(!options.mergeOnKeyPath){
-      return this.putBatch(models, options);
+  merge: function(models){
+    models = !_.isArray(models) ? [models] : models;
+    if(!this.parent.mergeKeyPath){
+      return this.putBatch(models);
     }
-    if( _.isArray(models) ){
-      var merge = _.map(models, function(model){
-        return this._merge(model, options.mergeOnKeyPath);
-      }, this);
-      return $.when.apply(this, merge);
-    }
-    return this._merge(models, options.mergeOnKeyPath);
+    var merge = _.map(models, this._merge, this);
+    return $.when.apply(this, merge);
   },
 
-  _merge: function(model, mergeKeyPath){
-    var keyPath = this.store.keyPath,
+  _merge: function(model){
+    var mergeKeyPath = this.parent.mergeKeyPath,
+        keyPath = this.store.keyPath,
         self = this,
         opts = {};
 
@@ -428,6 +426,13 @@ var methods = {
         }
         return self.create(model);
       });
+  },
+
+  _returnAttributes: function(model){
+    if(model instanceof bb.Model){
+      return model.toJSON();
+    }
+    return model;
   }
 };
 
