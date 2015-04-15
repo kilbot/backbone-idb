@@ -46,7 +46,7 @@ var methods = {
         data = this._returnAttributes(model),
         keyPath = this.store.keyPath;
 
-    return this.store.put(data)
+    return this.put(data)
       .then(function(insertedId){
         data[keyPath] = insertedId;
         onSuccess(data);
@@ -65,7 +65,7 @@ var methods = {
         data = this._returnAttributes(model),
         self = this;
 
-    return this.store.put(data)
+    return this.put(data)
       .then(function(insertedId){
         return self.get(insertedId)
           .done(onSuccess)
@@ -101,7 +101,7 @@ var methods = {
       .done(onSuccess)
       .fail(onError);
   },
-
+  
   /**
    *
    */
@@ -251,24 +251,29 @@ var methods = {
   },
 
   /**
-   * select records by {key: value}
+   *
    */
-  getByAttribute: function(attribute){
+  query: function(index, keyRange){
     var deferred = new $.Deferred();
-    var onSuccess = deferred.resolve;
-    var onError = deferred.reject;
 
-    var keyRange = this.store.makeKeyRange({
-      only: _.chain(attribute).values().first().value()
-    });
-
-    this.store.query(onSuccess, {
-      index: _.chain(attribute).keys().first().value(),
+    this.store.query(deferred.resolve, {
+      index: index,
       keyRange: keyRange,
-      onError: onError
+      onError: deferred.reject
     });
 
     return deferred.promise();
+  },
+
+  /**
+   * select records by {key: value}
+   */
+  getByAttribute: function(attribute){
+    var index = _.chain(attribute).keys().first().value();
+    var keyRange = this.store.makeKeyRange({
+      only: _.chain(attribute).values().first().value()
+    });
+    return this.query(index, keyRange);
   },
 
   merge: function(models){
