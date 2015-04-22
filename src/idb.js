@@ -101,7 +101,7 @@ var methods = {
       .done(onSuccess)
       .fail(onError);
   },
-  
+
   /**
    *
    */
@@ -290,6 +290,10 @@ var methods = {
         keyPath = this.store.keyPath,
         self = this,
         opts = {};
+
+    if(model[keyPath]){
+      return this.update(model);
+    }
 
     opts[mergeKeyPath] = model[mergeKeyPath];
 

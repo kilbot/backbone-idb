@@ -67,7 +67,6 @@ describe('IndexedDB Collection', function () {
     });
 
     after(function(done) {
-      // deleteDatabase can cause problems, use clear instead
       this.collection.db.store.clear(done);
     });
 
@@ -121,8 +120,8 @@ describe('IndexedDB Collection', function () {
         });
     });
 
-    after(function(done) {
-      this.collection.db.store.clear(done);
+    after(function() {
+      indexedDB.deleteDatabase('IDBWrapper-Store');
     });
 
   });
@@ -168,7 +167,32 @@ describe('IndexedDB Collection', function () {
       });
     });
 
-    it('should merge a model on an arbitrary attribute', function (done) {
+    it('should merge model attributes', function (done) {
+      var self = this;
+
+      this.collection.db.getByAttribute({ id: 4 })
+        .then(function(array){
+          var obj = _.first(array);
+          return self.collection.merge({
+            id: 4,
+            local_id: obj.local_id,
+            firstname: 'John',
+            lastname: 'Doe',
+            age: 53,
+            email: 'johndoe@example.com'
+          });
+        })
+        .then(function(model){
+          model.length.should.eql(1);
+          model[0].get('age').should.eql(53);
+          self.collection.length.should.eql(1);
+          model[0].should.eql(self.collection.at(0));
+          done();
+        });
+
+    });
+
+    it('should merge model attributes on an arbitrary attribute', function (done) {
       var self = this;
 
       this.collection.merge(
@@ -190,7 +214,7 @@ describe('IndexedDB Collection', function () {
 
     });
 
-    it('should merge an array of models on an arbitrary attribute', function (done) {
+    it('should merge an array of model attributes on an arbitrary attribute', function (done) {
       var self = this;
 
       this.collection.merge(
@@ -218,8 +242,9 @@ describe('IndexedDB Collection', function () {
 
     });
 
-    after(function(done) {
-      this.collection.db.store.clear(done);
+    after(function() {
+      indexedDB.deleteDatabase('IDBWrapper-Dual');
+      //this.collection.db.store.clear(done);
     });
 
   });
