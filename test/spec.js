@@ -121,7 +121,7 @@ describe('IndexedDB Collection', function () {
     });
 
     after(function() {
-      indexedDB.deleteDatabase('IDBWrapper-Store');
+      window.indexedDB.deleteDatabase('IDBWrapper-Store');
     });
 
   });
@@ -243,8 +243,64 @@ describe('IndexedDB Collection', function () {
     });
 
     after(function() {
-      indexedDB.deleteDatabase('IDBWrapper-Dual');
+      window.indexedDB.deleteDatabase('IDBWrapper-Dual');
       //this.collection.db.store.clear(done);
+    });
+
+    describe('Handling errors', function () {
+
+      before(function () {
+        var Model = Backbone.Model.extend({
+          idAttribute: 'local_id',
+          remoteIdAttribute: 'id'
+        });
+        var Collection = Backbone.IDBCollection.extend({
+          model: Model,
+          keyPath: 'local_id',
+          mergeKeyPath: 'id'
+        });
+        this.collection = new Collection([], {
+          keyPath: 'local_id',
+          storeName: 'Error',
+          indexes: [
+            {name: 'local_id', keyPath: 'local_id', unique: true},
+            {name: 'id', keyPath: 'id', unique: true},
+            {name: 'email', keyPath: 'email', unique: true}
+          ]
+        });
+      });
+
+      it('produce an error if there is a keyPath clash', function (done) {
+        var col = this.collection;
+        col.create({
+          firstname: 'John',
+          lastname: 'Doe',
+          age: 52,
+          email: 'johndoe@example.com'
+        }, {
+          success: function(){
+            col.create({
+              firstname: 'John',
+              lastname: 'Schmo',
+              email: 'johndoe@example.com'
+            }, {
+              success: function(model){
+                done(model);
+              },
+              error: function(){
+                done();
+              }
+            });
+          }
+        });
+
+      });
+
+      after(function() {
+        window.indexedDB.deleteDatabase('IDBWrapper-Error');
+        //this.collection.db.store.clear(done);
+      });
+
     });
 
   });
