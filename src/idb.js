@@ -13,6 +13,9 @@ var defaultErrorHandler = function (error) {
 function IndexedDB(options, parent) {
   this.parent = parent;
   this.options = options;
+  if(options.defaultErrorHandler){
+    defaultErrorHandler = options.defaultErrorHandler;
+  }
 }
 
 var methods = {
