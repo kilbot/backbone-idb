@@ -1,7 +1,7 @@
 /**
  * Backbone adapter for idb-wrapper api
  */
-var IDBStore = require('idb-wrapper');
+var IDBStore = require('../idb-wrapper/idbstore');
 var $ = require('jquery');
 var _ = require('underscore');
 var bb = require('backbone');
