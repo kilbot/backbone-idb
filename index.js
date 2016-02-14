@@ -1,6 +1,6 @@
 var bb = require('backbone');
 var idbSync = require('./src/sync.js');
-var IndexedDB = require('./src/idb.js');
+var IndexedDB = require('./src/promisify-idb-wrapper.js');
 
 // reference to Backbone.sync
 bb.ajaxSync = bb.sync;

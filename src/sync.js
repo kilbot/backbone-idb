@@ -1,56 +1,30 @@
-var $ = require('jquery');
-var noop = function(){};
+/* jshint -W074 */
+module.exports = function(method, entity, options) {
+  var db = entity.db || entity.collection.db;
 
-var methods = {
-  'read': function(model, options, db){
-    if(model.id){
-      return db.read(model, options);
-    }
-    return db.getAll(options);
-  },
-  'create': function(model, options, db){
-    if (model.id) {
-      return db.update(model, options);
-    }
-    return db.create(model, options);
-  },
-  'update': function(model, options, db){
-    if (model.id) {
-      return db.update(model, options);
-    }
-    return db.create(model, options);
-  },
-  'delete': function(model, options, db){
-    if (model.id) {
-      return db.destroy(model, options);
-    }
-  }
-};
-
-var sync = function(method, entity, options) {
-  var deferred = new $.Deferred(),
-      db = entity.db || entity.collection.db,
-      success = options.success || noop,
-      error = options.success || noop;
-
-  options.success = function (result) {
-    success.apply(this, arguments);
-    deferred.resolve(result);
-  };
-
-  options.error = function (result) {
-    error.apply(this, arguments);
-    deferred.reject(result);
-  };
-
-  db.open()
+  return db.open()
     .then(function(){
-      if(methods[method]){
-        return methods[method](entity, options, db);
+      switch(method){
+        case 'read':
+          if(entity.id){
+            return db.read(entity, options);
+          }
+          return db.getAll(options);
+        case 'create':
+          if (entity.id) {
+            return db.update(entity, options);
+          }
+          return db.create(entity, options);
+        case 'update':
+          if (entity.id) {
+            return db.update(entity, options);
+          }
+          return db.create(entity, options);
+        case 'delete':
+          if (entity.id) {
+            return db.destroy(entity, options);
+          }
       }
     });
-
-  return deferred.promise();
 };
-
-module.exports = sync;
+/* jshint +W074 */

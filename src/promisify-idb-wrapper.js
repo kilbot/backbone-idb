@@ -52,9 +52,9 @@ var methods = {
     return this.put(data)
       .then(function(insertedId){
         data[keyPath] = insertedId;
-        onSuccess(data);
         return data;
       })
+      .done(onSuccess)
       .fail(onError);
   },
 
@@ -70,10 +70,9 @@ var methods = {
 
     return this.put(data)
       .then(function(insertedId){
-        return self.get(insertedId)
-          .done(onSuccess)
-          .fail(onError);
+        return self.get(insertedId);
       })
+      .done(onSuccess)
       .fail(onError);
   },
 
@@ -84,6 +83,7 @@ var methods = {
     options = options || {};
     var onSuccess = options.success || noop,
         onError = options.error || defaultErrorHandler;
+
     return this.get(model.id)
       .done(onSuccess)
       .fail(onError);

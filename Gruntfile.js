@@ -5,7 +5,7 @@ module.exports = function(grunt) {
     watch: {
       js: {
         files: ['src/*.js'],
-        tasks: ['jshint']
+        tasks: ['webpack', 'jshint']
       },
       test: {
         files: ['test/spec.js']
@@ -49,6 +49,6 @@ module.exports = function(grunt) {
   });
 
   require('load-grunt-tasks')(grunt);
-  grunt.registerTask('default', ['jshint', 'webpack']);
+  grunt.registerTask('default', ['webpack', 'jshint']);
   grunt.registerTask('dev', ['default', 'watch']);
 }
