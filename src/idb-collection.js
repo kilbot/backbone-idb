@@ -1,10 +1,10 @@
 var bb = require('backbone');
 var sync = require('./sync');
-var IndexedDB = require('./src/promisify-idb-wrapper');
+var IndexedDB = require('./promisify-idb-wrapper');
 var IDBModel = require('./idb-model');
 
 // attach to Backbone
-bb.IDBCollection = bb.Collection.extend({
+module.exports = bb.IDBCollection = bb.Collection.extend({
 
   model: IDBModel,
 
