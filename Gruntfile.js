@@ -27,10 +27,14 @@ module.exports = function(grunt) {
           'backbone-idb': './index.js'
         },
         resolve: {
+          alias: {
+            underscore: 'lodash'
+          },
           modulesDirectories: ['node_modules']
         },
         externals: {
           jquery: 'jQuery',
+          lodash: '_',
           underscore: '_',
           backbone: 'Backbone',
           'idb-wrapper': 'IDBStore'

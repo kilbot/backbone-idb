@@ -1,15 +1,16 @@
 var bb = require('backbone');
-var sync = require('./sync');
+var _ = require('lodash');
 
 // attach to Backbone
 module.exports = bb.IDBModel = bb.Model.extend({
 
-  initialize: function(){
-    if( !this.collection || !this.collection.db ){
+  constructor: function( attributes, options ){
+    this.db = _.get( options, ['collection', 'db'] );
+    if( !this.db ){
       throw Error('Model must be in an IDBCollection');
     }
-  },
 
-  sync: sync
+    bb.Model.apply( this, arguments );
+  }
 
 });

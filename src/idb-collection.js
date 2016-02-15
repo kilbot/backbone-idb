@@ -1,5 +1,4 @@
 var bb = require('backbone');
-var sync = require('./sync');
 var IndexedDB = require('./promisify-idb-wrapper');
 var IDBModel = require('./idb-model');
 
@@ -8,12 +7,36 @@ module.exports = bb.IDBCollection = bb.Collection.extend({
 
   model: IDBModel,
 
-  initialize: function(models, options){
-    this.db = new IndexedDB(options, this);
+  constructor: function(){
+    var opts = {
+      storeName     : this.name,
+      storePrefix   : this.storePrefix,
+      dbVersion     : this.dbVersion,
+      keyPath       : this.keyPath,
+      autoIncrement : this.autoIncrement,
+      indexes       : this.indexes
+    };
+
+    this.db = new IndexedDB(opts, this);
     this.db.open();
+
+    bb.Collection.apply( this, arguments );
   },
 
-  sync: sync,
+  /**
+   * Clears the IDB storage and resets the collection
+   */
+  clear: function(){
+    var self = this;
+    return this.db.open()
+      .then(function(){
+        return self.db.clear();
+      })
+      .done(function(){
+        self.reset();
+      });
+  },
+
 
   // ???
   merge: function(models){
@@ -24,5 +47,13 @@ module.exports = bb.IDBCollection = bb.Collection.extend({
         return self.add(models, {merge: true});
       });
   }
+
+  //getChanged: function() {
+  //  // return a list of models that have changed by checking hasChanged()
+  //},
+  //
+  //save: function(attributes, options) {
+  //  // get an array of changed models
+  //}
 
 });

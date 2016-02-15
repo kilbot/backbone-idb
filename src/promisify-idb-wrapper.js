@@ -3,7 +3,7 @@
  */
 var IDBStore = require('idb-wrapper');
 var $ = require('jquery');
-var _ = require('underscore');
+var _ = require('lodash');
 var bb = require('backbone');
 var noop = function (){};
 var defaultErrorHandler = function (error) {
@@ -11,6 +11,7 @@ var defaultErrorHandler = function (error) {
 };
 
 function IndexedDB(options, parent) {
+  options = options || {};
   this.parent = parent;
   this.options = options;
   if(options.defaultErrorHandler){
@@ -269,48 +270,8 @@ var methods = {
   },
 
   /**
-   * select records by {key: value}
+   *
    */
-  getByAttribute: function(attribute){
-    var index = _.chain(attribute).keys().first().value();
-    var keyRange = this.store.makeKeyRange({
-      only: _.chain(attribute).values().first().value()
-    });
-    return this.query(index, keyRange);
-  },
-
-  merge: function(models){
-    models = !_.isArray(models) ? [models] : models;
-    if(!this.parent.mergeKeyPath){
-      return this.putBatch(models);
-    }
-    var merge = _.map(models, this._merge, this);
-    return $.when.apply(this, merge);
-  },
-
-  _merge: function(model){
-    var mergeKeyPath = this.parent.mergeKeyPath,
-        keyPath = this.store.keyPath,
-        self = this,
-        opts = {};
-
-    if(model[keyPath]){
-      return this.update(model);
-    }
-
-    opts[mergeKeyPath] = model[mergeKeyPath];
-
-    return this.getByAttribute(opts)
-      .then(function(array){
-        var local = _.first(array);
-        if(local){
-          model[keyPath] = local[keyPath];
-          return self.update(model);
-        }
-        return self.create(model);
-      });
-  },
-
   _returnAttributes: function(model){
     if(model instanceof bb.Model){
       return model.toJSON();
