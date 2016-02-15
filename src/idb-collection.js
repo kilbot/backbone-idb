@@ -35,25 +35,6 @@ module.exports = bb.IDBCollection = bb.Collection.extend({
       .done(function(){
         self.reset();
       });
-  },
-
-
-  // ???
-  merge: function(models){
-    var self = this;
-    return this.db.merge(models)
-      .then(function(){
-        var models = Array.prototype.slice.apply(arguments);
-        return self.add(models, {merge: true});
-      });
   }
-
-  //getChanged: function() {
-  //  // return a list of models that have changed by checking hasChanged()
-  //},
-  //
-  //save: function(attributes, options) {
-  //  // get an array of changed models
-  //}
 
 });
