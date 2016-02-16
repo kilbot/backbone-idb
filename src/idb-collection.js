@@ -17,7 +17,7 @@ module.exports = bb.IDBCollection = bb.Collection.extend({
       indexes       : this.indexes
     };
 
-    this.db = new IndexedDB(opts, this);
+    this.db = new IndexedDB(opts);
     this.db.open();
 
     bb.Collection.apply( this, arguments );
@@ -35,6 +35,23 @@ module.exports = bb.IDBCollection = bb.Collection.extend({
       .done(function(){
         self.reset();
       });
+  },
+
+  save: function( models ){
+    var self = this;
+    if( ! models ){
+      models = this.getChangedModels();
+    }
+    return this.db.putBatch( models )
+      .then( function(){
+        return self.fetch();
+      });
+  },
+
+  getChangedModels: function(){
+    return this.filter(function( model ){
+      return model.isNew() || model.hasChanged();
+    });
   }
 
 });

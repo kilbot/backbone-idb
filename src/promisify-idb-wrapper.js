@@ -10,9 +10,8 @@ var defaultErrorHandler = function (error) {
   throw error;
 };
 
-function IndexedDB(options, parent) {
+function IndexedDB(options) {
   options = options || {};
-  this.parent = parent;
   this.options = options;
   if(options.defaultErrorHandler){
     defaultErrorHandler = options.defaultErrorHandler;
@@ -136,14 +135,10 @@ var methods = {
    *
    */
   remove: function(key){
+    var deferred = new $.Deferred();
     if( _.isObject(key) && key.hasOwnProperty(this.store.keyPath) ) {
       key = key[this.store.keyPath];
     }
-    return this._remove(key);
-  },
-
-  _remove: function (key) {
-    var deferred = new $.Deferred();
     this.store.remove(key, deferred.resolve, deferred.reject);
     return deferred.promise();
   },
@@ -198,7 +193,7 @@ var methods = {
    * indexedDB.
    */
   saveAll: function() {
-    return this.putBatch(this.parent.toJSON());
+    return this.putBatch( this.toJSON() );
   },
 
   /**
@@ -207,7 +202,8 @@ var methods = {
    */
   batch: function(dataArray) {
     var deferred = new $.Deferred();
-    this.store.batch(dataArray, deferred.resolve, deferred.reject);
+    var data = this._returnArrayOfAttributes( dataArray );
+    this.store.batch(data, deferred.resolve, deferred.reject);
     return deferred.promise();
   },
 
@@ -219,12 +215,10 @@ var methods = {
     if( !_.isArray(dataArray) ){
       return this.put(dataArray);
     }
-    return this._putBatch(dataArray);
-  },
 
-  _putBatch: function(dataArray) {
     var deferred = new $.Deferred();
-    this.store.putBatch(dataArray, deferred.resolve, deferred.reject);
+    var data = this._returnArrayOfAttributes( dataArray );
+    this.store.putBatch(data, deferred.resolve, deferred.reject);
     return deferred.promise();
   },
 
@@ -236,10 +230,6 @@ var methods = {
     if( !_.isArray(keyArray) ){
       return this.remove(keyArray);
     }
-    return this._removeBatch(keyArray);
-  },
-
-  _removeBatch: function(keyArray){
     var deferred = new $.Deferred();
     this.store.removeBatch(keyArray, deferred.resolve, deferred.reject);
     return deferred.promise();
@@ -270,14 +260,24 @@ var methods = {
   },
 
   /**
-   *
+   * convert models to json
    */
   _returnAttributes: function(model){
     if(model instanceof bb.Model){
       return model.toJSON();
     }
     return model;
+  },
+
+  /**
+   * convert collections to json
+   */
+  _returnArrayOfAttributes: function(models){
+    return _.map( models, function( model ){
+      return this._returnAttributes(model);
+    }.bind(this));
   }
+
 };
 
 _.extend(IndexedDB.prototype, methods);

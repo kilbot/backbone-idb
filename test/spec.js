@@ -104,7 +104,7 @@ describe('IndexedDB Collection', function () {
           email: 'joebloggs@example.com'
         }
       ]);
-      this.collection.db.saveAll()
+      this.collection.save()
         .then(function(){
           done();
         });
