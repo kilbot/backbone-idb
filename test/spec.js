@@ -91,7 +91,7 @@ describe('IndexedDB Collection', function () {
     });
 
     it('should batch save the collection', function (done) {
-      this.collection.add([
+      this.collection.save([
         {
           firstname: 'John',
           lastname: 'Doe',
@@ -103,11 +103,11 @@ describe('IndexedDB Collection', function () {
           age: 28,
           email: 'joebloggs@example.com'
         }
-      ]);
-      this.collection.save()
-        .then(function(){
-          done();
-        });
+      ])
+      .then(function( resp ){
+        resp.should.have.length(3);
+        done();
+      });
     });
 
     it('should fetch the collection', function (done) {

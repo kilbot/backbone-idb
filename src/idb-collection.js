@@ -42,7 +42,10 @@ module.exports = bb.IDBCollection = bb.Collection.extend({
     if( ! models ){
       models = this.getChangedModels();
     }
-    return this.db.putBatch( models )
+    return this.db.open()
+      .then( function() {
+        return self.db.putBatch( models );
+      })
       .then( function(){
         return self.fetch();
       });
