@@ -4,6 +4,8 @@ var _ = require('lodash');
 // attach to Backbone
 module.exports = bb.IDBModel = bb.Model.extend({
 
+  // idAttribute: this.collection.db.store.keyPath
+
   constructor: function( attributes, options ){
     this.db = _.get( options, ['collection', 'db'] );
     if( !this.db ){
