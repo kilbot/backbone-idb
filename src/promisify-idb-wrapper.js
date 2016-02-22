@@ -37,8 +37,8 @@ var methods = {
     var self = this, data = this._returnAttributes(model);
 
     return this.put(data)
-      .then(function(keyPath){
-        return self.get(keyPath);
+      .then(function(key){
+        return self.get(key);
       });
   },
 
